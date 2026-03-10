@@ -237,16 +237,87 @@
 
    Chaining is a mechanism whereby the output of one stream is connected to another stream creating a chain of multiple stream operations.
 
+   ```js
+   const fs = require('fs');
+    const zlib = require('zlib');
+
+    fs.createReadStream('input.txt')
+    .pipe(zlib.createGzip())
+    .pipe(fs.createWriteStream('input.txt.gz'));
+   ```
+   `.pipe()` enables chaining
+   types of stream involved - Readable, Writable, Transform, Duplex
+
+
+   ⚙️ What’s Happening?
+    - Read stream reads file in chunks
+    - Data piped to compression stream
+    - Compressed data piped to write stream
+    - No full file in memory
+
+
+    Memory efficient - processes chunks not entire file
+    Faster - Parallel data flow
+    Clean Code - Readable pipeline structure
+    Scalable - Perfect for large data
+
+    What is backpressure?
+    When receiver slower than sender → flow control needed.
+
+    Chaining in Node.js streams is the process of connecting multiple streams so that the output of one becomes the input of another. It is implemented using the pipe() method and allows efficient, memory-safe data processing pipelines, commonly used for file handling and data transformation.
+
+    Stream chaining enables building data processing pipelines similar to Unix pipes, allowing composable and scalable I/O workflows.
+
 **[ Back to Top ⬆ ](#table-of-contents---node-js)**
 
 7. ### What are streams in Nodejs Explain the different types of streams present in Nodejs?
 
    Streams are objects that allow the reading of data from the source and writing of data to the destination as a continuous process.<br/>
    There are four types of streams.<br/>
-   <Readable> to facilitate the reading operation.<br/>
-   <Writable> to facilitate the writing operation.<br/>
-   <Duplex> to facilitate both read and write operations.<br/>
-   <Transform> is a form of Duplex stream that performs computations based on the available input.<br/>
+   <Readable> to facilitate the reading operation.
+   ```js
+    const fs = require('fs');
+
+    const readStream = fs.createReadStream('data.txt');
+
+    readStream.on('data', chunk => {
+    console.log(chunk.toString());
+    });
+   ```
+   <br/>
+   <Writable> to facilitate the writing operation.
+   ```js
+    const fs = require('fs');
+
+    const writeStream = fs.createWriteStream('output.txt');
+    writeStream.write('Hello World');
+    writeStream.end();
+   ```
+   <br/>
+   <Duplex> to facilitate both read and write operations.
+
+    Examples:
+     TCP sockets
+     WebSockets
+
+    They allow two-way communication.
+   <br/>
+   <Transform> is a form of Duplex stream that performs computations based on the available input.
+   Examples:
+    Compression
+    Encryption
+    Data formatting
+   ```js
+    const zlib = require('zlib');
+    const fs = require('fs');
+
+    fs.createReadStream('input.txt')
+    .pipe(zlib.createGzip())
+    .pipe(fs.createWriteStream('input.txt.gz'));
+   ```
+   <br/>
+
+   `Streams in Node.js are objects that enable reading and writing data in chunks, allowing efficient memory usage for large data processing. There are four types: Readable streams for reading data, Writable streams for writing data, Duplex streams for both reading and writing, and Transform streams which are duplex streams that modify data while passing it through.`
 
 **[ Back to Top ⬆ ](#table-of-contents---node-js)**
 
@@ -270,7 +341,37 @@
 
 11. ### Explain the concept of URL module?
 
-    The URL module splits up a web address into readable parts
+    The URL module splits up a web address into readable parts.
+
+    The URL module provides utilities to parse, construct, and manipulate URLs.
+    `https://example.com:8080/products/phones?brand=apple&sort=price#reviews`
+    ![url image](image.png)
+
+    ```js
+        const url = require('url');
+
+        const myUrl = new URL('https://example.com:8080/products/phones?brand=apple&sort=price#reviews');
+
+        console.log(myUrl.hostname);   // example.com
+        console.log(myUrl.pathname);   // /products/phones
+        console.log(myUrl.searchParams.get('brand')); // apple
+    ```
+    Work with Query Parameters Easily
+    ```js
+        myUrl.searchParams.append('page', '2');
+        myUrl.searchParams.get('sort');
+        myUrl.searchParams.delete('brand');
+    ```
+    No manual string parsing is needed
+
+    Build URL Safely
+    ```js
+        const myUrl = new URL('/products', 'https://example.com');
+        myUrl.searchParams.set('category', 'electronics');
+        console.log(myUrl.toString());
+    ```
+
+    `The URL module in Node.js provides utilities to parse, construct, and manipulate web URLs. It allows developers to extract components like protocol, hostname, path, and query parameters, and safely build dynamic URLs. The modern WHATWG URL API makes URL handling cleaner and more reliable.`
 
 **[ Back to Top ⬆ ](#table-of-contents---node-js)**
 
@@ -282,6 +383,44 @@
     Update or modify the request and the response objects<br/>
     Finish the request-response cycle<br/>
     Invoke the next middleware in the stack
+    1. Application-level Middleware
+       Runs for all routes
+    2. Router-level Middleware
+       Applies to specific router
+    3. Route-level Middleware
+       Applies to one endpoint
+    4. Built-in Middleware
+       Provided by framework
+       example:
+         JSON body parser
+         Static file serving
+    5. Third-Party Middleware
+       CORS
+       Security headers
+       Rate limiting
+    6. Error Handling Middleware
+       Used to centralize error handling
+
+    Flow
+    ```js
+    app.use(auth);
+    app.use(validate);
+    app.get('/orders', handler);
+    ```
+    `
+    auth → validate → handler
+    `
+    - Middleware Order Matters
+       Security first → parsing → routing → errors
+    
+    - Why Middleware is Powerful
+            Middleware enables:
+            Clean separation of concerns
+            Reusable request logic
+            Pipeline architecture
+            Scalable backend structure
+
+    `Middleware in Node.js is a function that executes during the request–response cycle and has access to the request object, response object, and the next function. It can execute code, modify request/response objects, end the response, or pass control to the next middleware. Middleware enables reusable request processing and forms a pipeline architecture essential for scalable backend systems.`
 
 **[ Back to Top ⬆ ](#table-of-contents---node-js)**
 
@@ -306,6 +445,57 @@
 15. ### Differentiate between spawn and fork methods in Nodejs?
 
     In Node.js, the spawn() is used to launch a new process with the provided set of commands. This method doesn’t create a new V8 instance and just one copy of the node module is active on the processor. When your child process returns a large amount of data to the Node you can invoke this method.
+
+    1. Task Function:
+        A function that defines how each task is processed
+        It runs every time a job is picked from the queue.
+
+        ```js 
+            (task, callback) => {}
+        ```
+        task - Data for that job
+        callback - Signals task completion
+        ```js
+        const worker = (task, callback) => {
+        console.log("Processing:", task.name);
+        setTimeout(() => {
+            callback(); // tells queue: done
+        }, 1000);
+        };
+        ```
+    
+    2. Concurrency value
+        Maximum number of tasks processed at the same time.
+        Why needed:
+            Without limit:
+            Too many DB/API calls
+            Server overload
+            Rate limit bans
+        ```js
+        const queue = async.queue(worker, 3);
+        ```
+
+        only 3 task run in parallel, others wait in line
+
+        `
+         Task List → Queue → Workers → Results
+        `
+
+        ```js
+        const async = require('async');
+
+        const worker = (task, cb) => {
+        console.log('Processing', task);
+        setTimeout(cb, 1000);
+        };
+
+        const queue = async.queue(worker, 2);
+
+        queue.push({ id: 1 });
+        queue.push({ id: 2 });
+        queue.push({ id: 3 });
+        queue.push({ id: 4 });
+        ```
 
 **[ Back to Top ⬆ ](#table-of-contents---node-js)**
 
